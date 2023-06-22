@@ -18,11 +18,11 @@ import javafx.stage.Stage;
 // Teste de primeiro commit Francisco
 // Teste de joao david
 
-public class Proj extends Application {
+public class Main extends Application {
     
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("MainMenu.fxml"));
         
         Scene scene = new Scene(root);
         
