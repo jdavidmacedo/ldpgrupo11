@@ -20,5 +20,30 @@ public class Peca {
         this.numEsq = numEsq;
         this.numDir = numDir;
     }
+
+    public int getIdPeca() {
+        return idPeca;
+    }
+
+    public int getNumEsq() {
+        return numEsq;
+    }
+
+    public int getNumDir() {
+        return numDir;
+    }
+
+    public void setIdPeca(int idPeca) {
+        this.idPeca = idPeca;
+    }
+
+    public void setNumEsq(int numEsq) {
+        this.numEsq = numEsq;
+    }
+
+    public void setNumDir(int numDir) {
+        this.numDir = numDir;
+    }
+    
     
 }
