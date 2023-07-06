@@ -59,7 +59,7 @@ public class DominoGameUI extends Application {
 
 
     private static final String DB_URL = "jdbc:mysql://192.168.1.8:3306/game";
-    private static final String DB_USERNAME = "newuser";«
+    private static final String DB_USERNAME = "newuser";
     private static final String DB_PASSWORD = "12345";
 
     // Prepared statements for database operations
