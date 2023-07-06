@@ -5,6 +5,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -700,7 +701,10 @@ public class DominoGameUI extends Application {
         }
     }
 
-    private void showAlert(AlertType alertType, String title, String message) {
+    private void showAlert(Alert.AlertType alertType, String roundOver, String message, ButtonType startNewRoundButton, ButtonType exitButton) {
+    }
+
+    private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
         alert.setHeaderText(null);
