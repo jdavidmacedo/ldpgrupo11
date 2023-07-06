@@ -12,6 +12,7 @@ import javafx.stage.Stage;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Random;
 
@@ -79,7 +80,8 @@ public class DominoGameUI extends Application {
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage primaryStage) throws SQLException {
+        primaryStage.setTitle("Domino Game");
 
 
     }
