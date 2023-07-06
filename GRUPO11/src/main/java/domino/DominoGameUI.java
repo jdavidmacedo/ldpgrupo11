@@ -1,27 +1,31 @@
 package domino;
 
 import javafx.application.Application;
-
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.layout.*;
+import javafx.scene.layout.;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.scene.Node;
 
-import java.sql.*;
+import java.sql.;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.layout.Region;
+import javafx.application.Platform;
+
+import javax.xml.transform.Result;
 
 public class DominoGameUI extends Application {
     private static final int TILE_SIZE = 60;
@@ -90,330 +94,7 @@ public class DominoGameUI extends Application {
     public void start(Stage primaryStage) throws SQLException {
         primaryStage.setTitle("Domino Game");
 
-        // Initialize database connection and prepared statements
-        try {
-            Connection conn = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
-            getPlayer1TileStmt= conn.prepareStatement("SELECT * FROM player1_tiles");
-            getPlayer2TileStmt= conn.prepareStatement("SELECT * FROM player2_tiles");
-            getGameAreaTileStmt= conn.prepareStatement("SELECT * FROM game_tiles");
-            rs=getPlayer1TileStmt.executeQuery();
-            rs1=getPlayer2TileStmt.executeQuery();
-            rs2=getGameAreaTileStmt.executeQuery();
-            updatecurr=conn.prepareStatement("UPDATE current SET curr=?");
-            PreparedStatement checkplayer1=conn.prepareStatement("SELECT * FROM active where player=1");
-            PreparedStatement checkplayer2=conn.prepareStatement("SELECT * FROM active where player=2");
-            rs3=checkplayer1.executeQuery();
-            rs4=checkplayer2.executeQuery();
-            getcurr=conn.prepareStatement("SELECT * FROM current");
 
-            updatestatus=conn.prepareStatement("UPDATE active SET active=? WHERE player=?");
-            delPlayer1tile=conn.prepareStatement("DELETE FROM player1_tiles WHERE value1=? AND value2=?");
-            delPlayer2tile=conn.prepareStatement("DELETE FROM player2_tiles WHERE value1=? AND value2=?");
-            delGameAreaTile=conn.prepareStatement("DELETE FROM game_tiles WHERE value1=? AND value2=?");
-            insertPlayer1TileStmt = conn.prepareStatement("INSERT INTO player1_tiles (value1, value2) VALUES (?, ?)");
-            insertPlayer2TileStmt = conn.prepareStatement("INSERT INTO player2_tiles (value1, value2) VALUES (?, ?)");
-            insertGameAreaTileStmt = conn.prepareStatement("INSERT INTO game_tiles (value1, value2) VALUES (?, ?)");
-            updatePlayerScoresStmt = conn.prepareStatement("UPDATE player_scores SET score = ? WHERE player = ?");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            // Handle database connection error
-        }
-        if(rs3.next() && rs3.getInt("active")==0 )
-        {
-
-
-            player="player1";
-            updatestatus.setInt(1,1);
-            updatestatus.setInt(2,1);
-            updatestatus.executeUpdate();
-
-
-
-
-
-
-        }
-        else if(rs4.next() && rs4.getInt("active")==0)
-        {
-
-            player="player2";
-            updatestatus.setInt(1,1);
-            updatestatus.setInt(2,2);
-            updatestatus.executeUpdate();
-
-
-
-        }
-        else
-        {
-
-            Alert a=new Alert(Alert.AlertType.INFORMATION);
-            a.setContentText("All servers are busy");
-            a.showAndWait();
-            Platform.exit();
-
-        }
-
-
-
-
-        random = new Random();
-        currentPlayer = 1;
-        player1Score = 0;
-        player2Score = 0;
-        currentRound = 1;
-
-        root = new BorderPane();
-        root.setPadding(new Insets(10));
-        root.setStyle("-fx-background-color: lightgray"); // Add background color to the root pane
-
-        // Top part - Score, Turn, and Skip Turn buttons
-        HBox topBox = new HBox(20);
-        topBox.setAlignment(Pos.CENTER);
-        scoreText = new Text("Player 1: " + player1Score + "   Player 2: " + player2Score);
-        scoreText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        turnText = new Text("Turn: Player " + currentPlayer);
-        turnText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-
-        roundText = new Text("Round: " + currentRound);
-        roundText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-
-        skipTurnPlayer1 = new Button("Skip Turn (Player 1)");
-        skipTurnPlayer1.setOnAction(e -> {
-            if (currentPlayer == 1) {
-                currentPlayer = 2;
-                try {
-                    updatecurr.setInt(1, 2);
-                    updatecurr.executeUpdate();
-
-                } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                }
-                turnText.setText("Turn: Player " + currentPlayer);
-                player1TilesBox.setVisible(false);
-                player2TilesBox.setVisible(true);
-            }
-        });
-
-        skipTurnPlayer2 = new Button("Skip Turn (Player 2)");
-        skipTurnPlayer2.setOnAction(e -> {
-            if (currentPlayer == 2) {
-                currentPlayer = 1;
-                try {
-                    updatecurr.setInt(1, 1);
-                    updatecurr.executeUpdate();
-
-                } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                }
-
-                turnText.setText("Turn: Player " + currentPlayer);
-                player1TilesBox.setVisible(true);
-                player2TilesBox.setVisible(false);
-            }
-        });
-        if(player.equals("player1"))
-        {
-            skipTurnPlayer2.setVisible(false);
-        }
-        else
-        {
-            skipTurnPlayer1.setVisible(false);
-        }
-        topBox.getChildren().addAll(scoreText, turnText, roundText, skipTurnPlayer1, skipTurnPlayer2);
-        root.setTop(topBox);
-
-        // Right part - Boneyard
-        boneyardBox = new VBox(5);
-        boneyardBox.setAlignment(Pos.TOP_RIGHT);
-        drawButton = new Button("Draw");
-        drawButton.setStyle("-fx-font-size: 16px");
-        drawButton.setOnAction(e -> drawTile());
-        boneyardBox.getChildren().add(drawButton);
-        root.setRight(boneyardBox);
-
-        // Center parts - Player Tiles and Game Area
-        StackPane centerPane = new StackPane();
-        centerPane.setAlignment(Pos.CENTER);
-
-        HBox centerBox = new HBox(20);
-        centerBox.setAlignment(Pos.CENTER);
-        centerPane.getChildren().add(centerBox);
-        root.setCenter(centerPane);
-
-        player1TilesBox = new VBox(10);
-        player1TilesBox.setAlignment(Pos.CENTER);
-        player1TilesBox.setPrefWidth(TILE_SIZE);
-        if(player.equals("player1"))
-            centerBox.getChildren().add(player1TilesBox);
-
-        boolean flag=false;
-        while(rs.next())
-        {
-            int value1=rs.getInt("value1");
-            int value2=rs.getInt("value2");
-            Pane p=createTile(value1, value2, 1);
-            p.setOnMouseClicked(e->handleTileClick(p));
-            player1TilesBox.getChildren().add(p);
-            flag=true;
-
-
-
-        }
-        if(!flag)
-            for (int i = 0; i < NUM_TILES_PER_PLAYER; i++) {
-                Pane p= createRandomTile(1);
-                p.setOnMouseClicked(e->handleTileClick(p));
-                player1TilesBox.getChildren().add(p);
-                insertPlayer1TileStmt.setInt(1, Integer.parseInt(((Text) p.getChildren().get(1)).getText()));
-                insertPlayer1TileStmt.setInt(2, Integer.parseInt(((Text) p.getChildren().get(2)).getText()));
-                insertPlayer1TileStmt.executeUpdate();
-
-            }
-
-        player2TilesBox = new VBox(10);
-        player2TilesBox.setAlignment(Pos.CENTER);
-        player2TilesBox.setPrefWidth(TILE_SIZE);
-
-        while(rs1.next())
-        {
-            int value1=rs1.getInt("value1");
-            int value2=rs1.getInt("value2");
-            Pane p=createTile(value1, value2, 2);
-            p.setOnMouseClicked(e->handleTileClick(p));
-            player2TilesBox.getChildren().add(p);
-            flag=true;
-        }
-        if(!flag)
-            for (int i = 0; i < NUM_TILES_PER_PLAYER; i++) {
-                Pane p= createRandomTile(2);
-                p.setOnMouseClicked(e->handleTileClick(p));
-                player2TilesBox.getChildren().add(p);
-                insertPlayer2TileStmt.setInt(1, Integer.parseInt(((Text)p.getChildren().get(1)).getText()));
-                insertPlayer2TileStmt.setInt(2, Integer.parseInt(((Text)p.getChildren().get(2)).getText()));
-                insertPlayer2TileStmt.executeUpdate();
-
-            }
-
-        gameAreaBox = new VBox(20);
-        gameAreaBox.setAlignment(Pos.CENTER);
-        gameAreaBox.setPrefWidth(TILE_SIZE * 4);
-        gameAreaBox.setPrefHeight(TILE_SIZE * 2);
-        gameAreaBox.setStyle("-fx-border-color: black; -fx-border-width: 2px;"); // Add border to the game area
-        gameAreaTiles = new ArrayList<>();
-        gameAreaBox.getChildren().addAll(gameAreaTiles);
-        centerBox.getChildren().add(gameAreaBox);
-        if(player.equals("player2"))
-            centerBox.getChildren().add(player2TilesBox);
-        while(rs2.next())
-        {
-            int value1=rs2.getInt("value1");
-            int value2=rs2.getInt("value2");
-            gameAreaBox.getChildren().add(createTile(value1, value2, 0));
-
-        }
-
-        primaryStage.setScene(new Scene(root));
-        primaryStage.setOnCloseRequest(e -> {
-            try {
-                //set status of player 1 to 0
-                if(player.equals("player1"))
-                {
-                    updatestatus.setInt(1, 0 );
-                    updatestatus.setInt(2, 1);
-                    updatestatus.executeUpdate();
-
-
-                }
-                //set status of player 2 to 0
-                else if(player.equals("player2"))
-                {
-                    updatestatus.setInt(1, 0);
-                    updatestatus.setInt(2, 2);
-                    updatestatus.executeUpdate();
-
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-        });
-        primaryStage.show();
-        boolean flags=false;
-        Connection conn=DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
-
-        while(!flags)
-        {
-
-            if(player.equals("player1"))
-            {
-                rs=getcurr.executeQuery();
-                while(rs.next())
-                {
-                    if(rs.getInt("curr")==1)
-                    {
-                        flags=true;
-                        PreparedStatement updategame=conn.prepareStatement("Select * from game_tiles");
-                        ResultSet rs3=updategame.executeQuery();
-                        gameAreaBox.getChildren().removeAll();
-                        while(rs3.next())
-                        {
-                            int value1=rs3.getInt("value1");
-                            int value2=rs3.getInt("value2");
-                            gameAreaBox.getChildren().add(createTile(value1, value2, 0));
-
-                        }
-                        break;
-                    }
-                }
-            }
-            else if(player.equals("player2"))
-            {
-                rs=getcurr.executeQuery();
-                while(rs.next())
-                {
-                    if(rs.getInt("curr")==2)
-                    {
-                        flags=true;
-                        PreparedStatement updategame=conn.prepareStatement("Select * from game_tiles");
-                        ResultSet rs3=updategame.executeQuery();
-                        gameAreaBox.getChildren().removeAll();
-                        while(rs3.next())
-                        {
-                            int value1=rs3.getInt("value1");
-                            int value2=rs3.getInt("value2");
-                            gameAreaBox.getChildren().add(createTile(value1, value2, 0));
-
-                        }
-                        break;
-                    }
-                }
-            }
-
-        }
-
-
-        //resetGame();
-
-        // Start button and draw button event handlers
-        startButton = new Button("Start");
-        startButton.setStyle("-fx-font-size: 16px");
-        startButton.setOnAction(e -> {
-            resetGame();
-            startButton.setDisable(true);
-            drawButton.setDisable(false);
-            player1TilesBox.setVisible(true);
-            player2TilesBox.setVisible(false);
-        });
-
-        drawButton.setOnAction(e -> {
-            drawTile();
-        });
-
-        // Add the start button to the bottom part of the UI
-        HBox bottomBox = new HBox(20);
-        bottomBox.setAlignment(Pos.CENTER);
-        bottomBox.getChildren().add(startButton);
-        root.setBottom(bottomBox);
     }
 
     private Pane createRandomTile(int player) {
@@ -695,16 +376,13 @@ public class DominoGameUI extends Application {
                     String message = "Round " + currentRound + " is over. Do you want to start a new round?";
                     ButtonType startNewRoundButton = new ButtonType("Start New Round");
                     ButtonType exitButton = new ButtonType("Exit");
-                    showAlert(Alert.AlertType.CONFIRMATION, "Round Over", message, startNewRoundButton, exitButton);
+                    showAlert(AlertType.CONFIRMATION, "Round Over", message, startNewRoundButton, exitButton);
                 }
             }
         }
     }
 
-    private void showAlert(Alert.AlertType alertType, String roundOver, String message, ButtonType startNewRoundButton, ButtonType exitButton) {
-    }
-
-    private void showAlert(Alert.AlertType alertType, String title, String message) {
+    private void showAlert(AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
         alert.setHeaderText(null);
