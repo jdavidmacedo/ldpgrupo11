@@ -330,5 +330,93 @@ public class DominoGameUI extends Application {
 
         return true;
     }
+    private void checkEndOfRound() {
+        if (player1TilesBox.getChildren().isEmpty() || player2TilesBox.getChildren().isEmpty()) {
+            if (!isGameLocked) {
+                int roundWinner;
+                int roundLoser;
+                int roundPoints;
+
+                if (roundScore == 0) {
+                    isGameLocked = true;
+                    roundWinner = currentPlayer == 1 ? 2 : 1;
+                    roundLoser = currentPlayer;
+                    roundPoints = calculateHandScore(roundLoser);
+                    System.out.println("Game is locked. All points are counted for each player.");
+                } else {
+                    roundWinner = currentPlayer;
+                    roundLoser = currentPlayer == 1 ? 2 : 1;
+                    roundPoints = roundScore + calculateHandScore(roundLoser);
+                    System.out.println("Player " + roundWinner + " wins the round and gets " + roundPoints + " points.");
+                }
+
+                if (roundPoints > 0) {
+                    if (roundWinner == 1) {
+                        player1Score += roundPoints;
+                    } else {
+                        player2Score += roundPoints;
+                    }
+                    updateScoreText();
+                }
+
+                if (player1Score >= 50 || player2Score >= 50) {
+                    String winner = player1Score >= 50 ? "Player 1" : "Player 2";
+                    String message = winner + " wins the game!";
+                    showAlert(AlertType.INFORMATION, "Game Over", message);
+                    Platform.exit(); // Exit the application after winning the game
+                } else {
+                    // Display a prompt to start a new round
+                    String message = "Round " + currentRound + " is over. Do you want to start a new round?";
+                    ButtonType startNewRoundButton = new ButtonType("Start New Round");
+                    ButtonType exitButton = new ButtonType("Exit");
+                    showAlert(AlertType.CONFIRMATION, "Round Over", message, startNewRoundButton, exitButton);
+                }
+            }
+        }
+    }
+
+    private void showAlert(AlertType alertType, String title, String message) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+        alert.showAndWait();
+    }
+
+    private void showAlert(AlertType alertType, String title, String message, ButtonType... buttonTypes) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.getButtonTypes().setAll(buttonTypes);
+        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+        alert.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == buttonTypes[0]) {
+                resetRound();
+            } else {
+                Platform.exit(); // Exit the application if "Exit" button is clicked
+            }
+        });
+    }
+    private void resetRound() {
+        // Reset round-specific variables and UI elements
+        roundScore = 0;
+        isRoundOver = false;
+        gameAreaTiles.clear();
+        gameAreaBox.getChildren().clear();
+        currentRound++;
+        roundText.setText("Round: " + currentRound);
+        currentPlayer = 1;
+        turnText.setText("Turn: Player " + currentPlayer);
+        // Clear player tiles
+        player1TilesBox.getChildren().clear();
+        player2TilesBox.getChildren().clear();
+        // Generate new random tiles for players
+        for (int i = 0; i < NUM_TILES_PER_PLAYER; i++) {
+            player1TilesBox.getChildren().add(createRandomTile(1));
+            player2TilesBox.getChildren().add(createRandomTile(2));
+        }
+    }
 
 }
