@@ -85,4 +85,80 @@ public class DominoGameUI extends Application {
 
 
     }
+
+    private Pane createRandomTile(int player) {
+        int value1 = random.nextInt(7);
+        int value2 = random.nextInt(7);
+        Pane tilePane = createTile(value1, value2, player);
+        tilePane.setOnMouseClicked(e -> handleTileClick(tilePane));
+        return tilePane;
+    }
+
+
+    // this is ok
+    private Pane createTile(int value1, int value2, int player) {
+        Pane tilePane = new Pane();
+        tilePane.setPrefSize(TILE_SIZE, TILE_SIZE);
+
+        Rectangle tileShape = new Rectangle(TILE_SIZE, TILE_SIZE);
+        tileShape.setFill(Color.WHITE);
+        tileShape.setStroke(Color.BLACK);
+
+        Text text1 = new Text(Integer.toString(value1));
+        text1.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        text1.setFill(player == 1 ? Color.RED : Color.BLUE);
+        text1.setX(TILE_SIZE * 0.15);
+        text1.setY(TILE_SIZE * 0.3);
+
+        Text text2 = new Text(Integer.toString(value2));
+        text2.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        text2.setFill(player == 1 ? Color.RED : Color.BLUE);
+        text2.setX(TILE_SIZE * 0.15);
+        text2.setY(TILE_SIZE * 0.7);
+
+        tilePane.getChildren().addAll(tileShape, text1, text2);
+
+        return tilePane;
+    }
+
+
+    private void adjustTileOrientation(Pane tilePane) {
+        if (gameAreaTiles.isEmpty()) {
+            return; // No need to adjust orientation for the first tile
+        }
+
+        Pane lastTilePane = gameAreaTiles.get(gameAreaTiles.size() - 1);
+        int lastValue1 = Integer.parseInt(((Text) lastTilePane.getChildren().get(1)).getText());
+        int lastValue2 = Integer.parseInt(((Text) lastTilePane.getChildren().get(2)).getText());
+        int currentValue1 = Integer.parseInt(((Text) tilePane.getChildren().get(1)).getText());
+        int currentValue2 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+
+        if (currentValue1 == lastValue2 || currentValue2 == lastValue2) {
+            // Swap values if the second value matches the last value
+            swapTileValues(tilePane);
+        } else if (currentValue1 == lastValue1 || currentValue2 == lastValue1) {
+            // Reverse values if the first value matches the last value
+            reverseTileValues(tilePane);
+        }
+    }
+
+    private void swapTileValues(Pane tilePane) {
+        Text value1Text = (Text) tilePane.getChildren().get(1);
+        Text value2Text = (Text) tilePane.getChildren().get(2);
+
+        String tempValue = value1Text.getText();
+        value1Text.setText(value2Text.getText());
+        value2Text.setText(tempValue);
+    }
+
+    private void reverseTileValues(Pane tilePane) {
+        Text value1Text = (Text) tilePane.getChildren().get(1);
+        Text value2Text = (Text) tilePane.getChildren().get(2);
+
+        String tempValue = value1Text.getText();
+        value1Text.setText(value2Text.getText());
+        value2Text.setText(tempValue);
+    }
+    
+
 }
