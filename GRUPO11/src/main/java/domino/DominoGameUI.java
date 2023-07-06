@@ -85,4 +85,246 @@ public class DominoGameUI extends Application {
 
 
     }
+
+    private Pane createRandomTile(int player) {
+        int value1 = random.nextInt(7);
+        int value2 = random.nextInt(7);
+        Pane tilePane = createTile(value1, value2, player);
+        tilePane.setOnMouseClicked(e -> handleTileClick(tilePane));
+        return tilePane;
+    }
+
+
+    // this is ok
+    private Pane createTile(int value1, int value2, int player) {
+        Pane tilePane = new Pane();
+        tilePane.setPrefSize(TILE_SIZE, TILE_SIZE);
+
+        Rectangle tileShape = new Rectangle(TILE_SIZE, TILE_SIZE);
+        tileShape.setFill(Color.WHITE);
+        tileShape.setStroke(Color.BLACK);
+
+        Text text1 = new Text(Integer.toString(value1));
+        text1.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        text1.setFill(player == 1 ? Color.RED : Color.BLUE);
+        text1.setX(TILE_SIZE * 0.15);
+        text1.setY(TILE_SIZE * 0.3);
+
+        Text text2 = new Text(Integer.toString(value2));
+        text2.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        text2.setFill(player == 1 ? Color.RED : Color.BLUE);
+        text2.setX(TILE_SIZE * 0.15);
+        text2.setY(TILE_SIZE * 0.7);
+
+        tilePane.getChildren().addAll(tileShape, text1, text2);
+
+        return tilePane;
+    }
+
+
+    private void adjustTileOrientation(Pane tilePane) {
+        if (gameAreaTiles.isEmpty()) {
+            return; // No need to adjust orientation for the first tile
+        }
+
+        Pane lastTilePane = gameAreaTiles.get(gameAreaTiles.size() - 1);
+        int lastValue1 = Integer.parseInt(((Text) lastTilePane.getChildren().get(1)).getText());
+        int lastValue2 = Integer.parseInt(((Text) lastTilePane.getChildren().get(2)).getText());
+        int currentValue1 = Integer.parseInt(((Text) tilePane.getChildren().get(1)).getText());
+        int currentValue2 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+
+        if (currentValue1 == lastValue2 || currentValue2 == lastValue2) {
+            // Swap values if the second value matches the last value
+            swapTileValues(tilePane);
+        } else if (currentValue1 == lastValue1 || currentValue2 == lastValue1) {
+            // Reverse values if the first value matches the last value
+            reverseTileValues(tilePane);
+        }
+    }
+
+    private void swapTileValues(Pane tilePane) {
+        Text value1Text = (Text) tilePane.getChildren().get(1);
+        Text value2Text = (Text) tilePane.getChildren().get(2);
+
+        String tempValue = value1Text.getText();
+        value1Text.setText(value2Text.getText());
+        value2Text.setText(tempValue);
+    }
+
+    private void reverseTileValues(Pane tilePane) {
+        Text value1Text = (Text) tilePane.getChildren().get(1);
+        Text value2Text = (Text) tilePane.getChildren().get(2);
+
+        String tempValue = value1Text.getText();
+        value1Text.setText(value2Text.getText());
+        value2Text.setText(tempValue);
+    }
+    private void updateScoreText() {
+        scoreText.setText("Player 1: " + player1Score + "   Player 2: " + player2Score);
+    }
+
+
+
+    private void handleTileClick(Pane tilePane) {
+        if (!isRoundOver) {
+            boolean isValidMove = false;
+            int value1 = Integer.parseInt(((Text) tilePane.getChildren().get(1)).getText());
+            int value2 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+
+            if (gameAreaTiles.isEmpty()) {
+                isValidMove = true; // First tile, no restrictions
+            } else {
+                Pane lastTilePane = gameAreaTiles.get(gameAreaTiles.size() - 1);
+                int lastValue1 = Integer.parseInt(((Text) lastTilePane.getChildren().get(1)).getText());
+                int lastValue2 = Integer.parseInt(((Text) lastTilePane.getChildren().get(2)).getText());
+
+                if (value1 == lastValue2 || value2 == lastValue2 ||
+                        value1 == lastValue1 || value2 == lastValue1) {
+                    if (!isSidePaired(lastTilePane, value1, value2)) {
+                        isValidMove = true; // Match found on at least one side and not already paired
+                    }
+                }
+            }
+
+            if (isValidMove) {
+                if (currentPlayer == 1 && player1TilesBox.getChildren().contains(tilePane)) {
+
+                    int value11 = Integer.parseInt(((Text) tilePane.getChildren().get(1)).getText());
+                    int value22 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+                    try {
+                        insertGameAreaTileStmt.setInt(1, value11);
+                        insertGameAreaTileStmt.setInt(2, value22);
+                        insertGameAreaTileStmt.executeUpdate();
+                        delPlayer1tile.setInt(1, value1);
+                        delPlayer1tile.setInt(2, value2);
+                        delPlayer1tile.executeUpdate();
+                        updatecurr.setInt(1, 2);
+                        updatecurr.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        // Handle database error
+                    }
+
+
+
+                    player1TilesBox.getChildren().remove(tilePane);
+                    gameAreaTiles.add(tilePane);
+                    currentPlayer = 2;
+                    turnText.setText("Turn: Player 2");
+                    player1TilesBox.setVisible(false);
+                    player2TilesBox.setVisible(true);
+                    // Pane newPane=createTile()
+                    // Adjust the tile orientation based on matching values
+                    adjustTileOrientation(tilePane);
+
+                    // Add the tile pane to the game area box and set its position
+                    gameAreaBox.getChildren().add(tilePane);
+                    tilePane.setLayoutX((gameAreaTiles.size() - 1) % 6 * TILE_SIZE);
+                    tilePane.setLayoutY((gameAreaTiles.size() - 1) / 6 * TILE_SIZE);
+
+                    // Enable skip turn button for Player 2
+                    skipTurnPlayer2.setDisable(false);
+                    boolean flag=false;
+                    while (!flag)
+                    {
+                        try {
+                            ResultSet r =getcurr.executeQuery();
+                            if(r.next())
+                            {
+                                if(r.getInt(1)==1)
+                                {
+                                    flag=true;
+                                }
+                            }
+
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                } else if (currentPlayer == 2 && player2TilesBox.getChildren().contains(tilePane)) {
+
+                    int value13 = Integer.parseInt(((Text) tilePane.getChildren().get(1)).getText());
+                    int value23 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+                    try {
+                        insertGameAreaTileStmt.setInt(1, value1);
+                        insertGameAreaTileStmt.setInt(2, value2);
+                        insertGameAreaTileStmt.executeUpdate();
+                        delPlayer2tile.setInt(1, value1);
+                        delPlayer2tile.setInt(2, value2);
+                        delPlayer2tile.executeUpdate();
+                        updatecurr.setInt(1, 1);
+                        updatecurr.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        // Handle database error
+                    }
+
+
+                    player2TilesBox.getChildren().remove(tilePane);
+                    gameAreaTiles.add(tilePane);
+                    currentPlayer = 1;
+                    turnText.setText("Turn: Player 1");
+                    player2TilesBox.setVisible(false);
+                    player1TilesBox.setVisible(true);
+                    // Pane newPane=createTile()
+                    // Adjust the tile orientation based on matching values
+                    adjustTileOrientation(tilePane);
+
+                    // Add the tile pane to the game area box and set its position
+                    gameAreaBox.getChildren().add(tilePane);
+                    tilePane.setLayoutX((gameAreaTiles.size() - 1) % 6 * TILE_SIZE);
+                    tilePane.setLayoutY((gameAreaTiles.size() - 1) / 6 * TILE_SIZE);
+
+                    // Enable skip turn button for Player 1
+                    skipTurnPlayer1.setDisable(false);
+                    Boolean flag=false;
+                    while (!flag)
+                    {
+                        try {
+                            ResultSet r =getcurr.executeQuery();
+                            if(r.next())
+                            {
+                                if(r.getInt(1)==2)
+                                {
+                                    flag=true;
+                                }
+                            }
+
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
+                calculateRoundScore();
+                updateScoreText();
+                checkEndOfRound();
+                try {
+                    updatePlayerScoresStmt.setInt(1, player1Score);
+                    updatePlayerScoresStmt.setString(2, "Player 1");
+                    updatePlayerScoresStmt.executeUpdate();
+
+                    updatePlayerScoresStmt.setInt(1, player2Score);
+                    updatePlayerScoresStmt.setString(2, "Player 2");
+                    updatePlayerScoresStmt.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    // Handle database error
+                }
+
+            }
+        }
+    }
+
+    private boolean isSidePaired(Pane tilePane, int value1, int value2) {
+        int tileValue2 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+
+        // Check if the second value of the existing tile can be paired with any value of the current tile
+        if (tileValue2 == value1 || tileValue2 == value2) {
+            return false;
+        }
+
+        return true;
+    }
+
 }
