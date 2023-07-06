@@ -419,4 +419,67 @@ public class DominoGameUI extends Application {
         }
     }
 
+    private int calculateRoundScore() {
+        int roundScore = 0;
+        for (Pane tilePane : gameAreaTiles) {
+            int value1 = Integer.parseInt(((Text) tilePane.getChildren().get(1)).getText());
+            int value2 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+            roundScore += value1 + value2;
+        }
+        return roundScore;
+    }
+
+    private int calculateHandScore(int player) {
+        int handScore = 0;
+        VBox playerTilesBox = player == 1 ? player1TilesBox : player2TilesBox;
+        for (Node tileNode : playerTilesBox.getChildren()) {
+            Pane tilePane = (Pane) tileNode;
+            int value1 = Integer.parseInt(((Text) tilePane.getChildren().get(1)).getText());
+            int value2 = Integer.parseInt(((Text) tilePane.getChildren().get(2)).getText());
+            handScore += value1 + value2;
+        }
+        return handScore;
+    }
+
+    private void resetGame() {
+        currentPlayer = 1;
+        gameAreaTiles.clear();
+        player1TilesBox.getChildren().clear();
+        player2TilesBox.getChildren().clear();
+        scoreText.setText("Player 1: " + player1Score + "   Player 2: " + player2Score);
+        turnText.setText("Turn: Player 1");
+
+        for (int i = 0; i < NUM_TILES_PER_PLAYER; i++) {
+            player1TilesBox.getChildren().add(createRandomTile(1));
+            player2TilesBox.getChildren().add(createRandomTile(2));
+        }
+
+        boneyardSize = 28 - (NUM_TILES_PER_PLAYER * NUM_PLAYERS);
+        isGameLocked = false;
+        isRoundOver = false;
+        player1TilesBox.setVisible(true);
+        player2TilesBox.setVisible(false);
+    }
+
+
+    private void drawTile() {
+        if (!isGameLocked && !isRoundOver) {
+            int player = currentPlayer;
+            VBox playerTilesBox = player == 1 ? player1TilesBox : player2TilesBox;
+            if (playerTilesBox.getChildren().size() < NUM_TILES_PER_PLAYER) {
+                if (boneyardSize > 0) {
+                    Pane tilePane = createRandomTile(player);
+                    playerTilesBox.getChildren().add(tilePane);
+                    boneyardSize--;
+                    if (boneyardSize == 0) {
+                        drawButton.setDisable(true);
+                    }
+                    checkEndOfRound(); // Check if the round ends after drawing a tile
+                } else {
+                    System.out.println("Boneyard is empty.");
+                }
+            }
+        }
+    }
+
 }
